@@ -78,9 +78,8 @@ namespace DepotDownloader
                 else
                 {
                     Directory.CreateDirectory(Config.InstallDirectory);
-
-                    installDir = Config.InstallDirectory;
-
+                    installDir = Path.Combine(Config.InstallDirectory, depotId.ToString());
+                    Directory.CreateDirectory(installDir);
                     Directory.CreateDirectory(Path.Combine(installDir, CONFIG_DIR));
                     Directory.CreateDirectory(Path.Combine(installDir, STAGING_DIR));
                 }
