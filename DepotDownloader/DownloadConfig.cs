@@ -31,5 +31,6 @@ namespace DepotDownloader
         public uint? LoginID { get; set; }
 
         public bool UseQrCode { get; set; }
+        public bool SeparateDepots { get; set; }
     }
 }
