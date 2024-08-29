@@ -1,3 +1,6 @@
+﻿// This file is subject to the terms and conditions defined
+// in file 'LICENSE', which is part of this source code package.
+
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -28,6 +31,5 @@ namespace DepotDownloader
         public uint? LoginID { get; set; }
 
         public bool UseQrCode { get; set; }
-        public bool SeparateDepots { get; set; }
     }
 }
