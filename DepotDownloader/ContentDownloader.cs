@@ -638,6 +638,7 @@ namespace DepotDownloader
             private bool running = false;
             private const int interval = 1000 * 60;
             private ulong lastDownloadSize = 0;
+            readonly AutoResetEvent threadWait = new(false);
             public void Start()
             {
                 running = true;
@@ -650,8 +651,18 @@ namespace DepotDownloader
             }
             public void Stop()
             {
-                running = false;
-                watchDogThread.Join();
+                Console.WriteLine("stopping download WATCHDOG ..");
+                if (running)
+                {
+                    running = false;
+                    threadWait.Set();
+                    watchDogThread.Join();
+                    Console.WriteLine("download WATCHDOG was stopped");
+                }
+                else
+                {
+                    Console.WriteLine("download WATCHDOG is not running !");
+                }
             }
             private void ReportAlive()
             {
@@ -663,7 +674,7 @@ namespace DepotDownloader
                         lastDownloadSize = totalDownloadedBytes;
                         Console.WriteLine("WATCHDOG : {0}", Util.FormatFileSize((long)lastDownloadSize));
                     }
-                    Thread.Sleep(interval);
+                    threadWait.WaitOne(interval);
                 }
 
             }
@@ -677,53 +688,64 @@ namespace DepotDownloader
 
             var downloadCounter = new GlobalDownloadCounter();
             var downloadWatchdog = new DownloadWatchdog(downloadCounter);
-            downloadWatchdog.Start();
             var depotsToDownload = new List<DepotFilesData>(depots.Count);
             var allFileNamesAllDepots = new HashSet<string>();
 
-            // First, fetch all the manifests for each depot (including previous manifests) and perform the initial setup
-            foreach (var depot in depots)
+            try
             {
-                var depotFileData = await ProcessDepotManifestAndFiles(cts, depot, downloadCounter);
-
-                if (depotFileData != null)
+                downloadWatchdog.Start();
+                // First, fetch all the manifests for each depot (including previous manifests) and perform the initial setup
+                foreach (var depot in depots)
                 {
-                    depotsToDownload.Add(depotFileData);
-                    allFileNamesAllDepots.UnionWith(depotFileData.allFileNames);
+                    var depotFileData = await ProcessDepotManifestAndFiles(cts, depot, downloadCounter);
+
+                    if (depotFileData != null)
+                    {
+                        depotsToDownload.Add(depotFileData);
+                        allFileNamesAllDepots.UnionWith(depotFileData.allFileNames);
+                    }
+
+                    cts.Token.ThrowIfCancellationRequested();
                 }
 
-                cts.Token.ThrowIfCancellationRequested();
-            }
-
-            // If we're about to write all the files to the same directory, we will need to first de-duplicate any files by path
-            // This is in last-depot-wins order, from Steam or the list of depots supplied by the user
-            if (!Config.SeparateDepots)
-            {
-
-                if (!string.IsNullOrWhiteSpace(Config.InstallDirectory) && depotsToDownload.Count > 0)
+                // If we're about to write all the files to the same directory, we will need to first de-duplicate any files by path
+                // This is in last-depot-wins order, from Steam or the list of depots supplied by the user
+                if (!Config.SeparateDepots)
                 {
-                    var claimedFileNames = new HashSet<String>();
 
-                    for (var i = depotsToDownload.Count - 1; i >= 0; i--)
+                    if (!string.IsNullOrWhiteSpace(Config.InstallDirectory) && depotsToDownload.Count > 0)
                     {
-                        // For each depot, remove all files from the list that have been claimed by a later depot
-                        depotsToDownload[i].filteredFiles.RemoveAll(file => claimedFileNames.Contains(file.FileName));
+                        var claimedFileNames = new HashSet<String>();
 
-                        claimedFileNames.UnionWith(depotsToDownload[i].allFileNames);
+                        for (var i = depotsToDownload.Count - 1; i >= 0; i--)
+                        {
+                            // For each depot, remove all files from the list that have been claimed by a later depot
+                            depotsToDownload[i].filteredFiles.RemoveAll(file => claimedFileNames.Contains(file.FileName));
+
+                            claimedFileNames.UnionWith(depotsToDownload[i].allFileNames);
+                        }
                     }
                 }
+
+
+                foreach (var depotFileData in depotsToDownload)
+                {
+                    await DownloadSteam3AsyncDepotFiles(cts, downloadCounter, depotFileData, allFileNamesAllDepots);
+                }
+
+                Ansi.Progress(Ansi.ProgressState.Hidden);
+
+                Console.WriteLine("Total downloaded: {0} bytes ({1} bytes uncompressed) from {2} depots",
+                    downloadCounter.totalBytesCompressed, downloadCounter.totalBytesUncompressed, depots.Count);
             }
-
-
-            foreach (var depotFileData in depotsToDownload)
+            catch (IOException ex)
             {
-                await DownloadSteam3AsyncDepotFiles(cts, downloadCounter, depotFileData, allFileNamesAllDepots);
+                Console.WriteLine("Failed to download steam v3 app: {0}", ex.Message);
             }
-
-            Ansi.Progress(Ansi.ProgressState.Hidden);
-
-            Console.WriteLine("Total downloaded: {0} bytes ({1} bytes uncompressed) from {2} depots",
-                downloadCounter.totalBytesCompressed, downloadCounter.totalBytesUncompressed, depots.Count);
+            finally
+            {
+                downloadWatchdog.Stop();
+            }
         }
 
         private static async Task<DepotFilesData> ProcessDepotManifestAndFiles(CancellationTokenSource cts, DepotDownloadInfo depot, GlobalDownloadCounter downloadCounter)
