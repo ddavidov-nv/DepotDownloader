@@ -631,6 +631,43 @@ namespace DepotDownloader
             public ulong depotBytesUncompressed;
         }
 
+        private class DownloadWatchdog(GlobalDownloadCounter globalDownloadCounter)
+        {
+            readonly GlobalDownloadCounter globalDownloadCounter = globalDownloadCounter;
+            public Thread watchDogThread;
+            private bool running = false;
+            private const int interval = 1000 * 60;
+            private ulong lastDownloadSize = 0;
+            public void Start()
+            {
+                running = true;
+                watchDogThread = new Thread(ReportAlive);
+                watchDogThread.Start();
+            }
+            ~DownloadWatchdog()
+            {
+                Stop();
+            }
+            public void Stop()
+            {
+                running = false;
+                watchDogThread.Join();
+            }
+            private void ReportAlive()
+            {
+                while (running)
+                {
+                    var totalDownloadedBytes = globalDownloadCounter.totalBytesUncompressed + globalDownloadCounter.totalBytesCompressed;
+                    if (totalDownloadedBytes > lastDownloadSize)
+                    {
+                        lastDownloadSize = totalDownloadedBytes;
+                        Console.WriteLine("WATCHDOG : {0}", Util.FormatFileSize((long)lastDownloadSize));
+                    }
+                    Thread.Sleep(interval);
+                }
+
+            }
+        }
         private static async Task DownloadSteam3Async(List<DepotDownloadInfo> depots)
         {
             Ansi.Progress(Ansi.ProgressState.Indeterminate);
@@ -639,6 +676,8 @@ namespace DepotDownloader
             cdnPool.ExhaustedToken = cts;
 
             var downloadCounter = new GlobalDownloadCounter();
+            var downloadWatchdog = new DownloadWatchdog(downloadCounter);
+            downloadWatchdog.Start();
             var depotsToDownload = new List<DepotFilesData>(depots.Count);
             var allFileNamesAllDepots = new HashSet<string>();
 
