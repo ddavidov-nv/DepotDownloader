@@ -631,10 +631,10 @@ namespace DepotDownloader
             public ulong depotBytesUncompressed;
         }
 
-        private class DownloadWatchdog(GlobalDownloadCounter globalDownloadCounter)
+        private class DownloadMonitor(GlobalDownloadCounter globalDownloadCounter)
         {
             readonly GlobalDownloadCounter globalDownloadCounter = globalDownloadCounter;
-            public Thread watchDogThread;
+            public Thread monitorThread;
             private bool running = false;
             private const int interval = 1000 * 60;
             private ulong lastDownloadSize = 0;
@@ -642,26 +642,26 @@ namespace DepotDownloader
             public void Start()
             {
                 running = true;
-                watchDogThread = new Thread(ReportAlive);
-                watchDogThread.Start();
+                monitorThread = new Thread(ReportAlive);
+                monitorThread.Start();
             }
-            ~DownloadWatchdog()
+            ~DownloadMonitor()
             {
                 Stop();
             }
             public void Stop()
             {
-                Console.WriteLine("stopping download WATCHDOG ..");
+                Console.WriteLine("stopping download monitor ..");
                 if (running)
                 {
                     running = false;
                     threadWait.Set();
-                    watchDogThread.Join();
-                    Console.WriteLine("download WATCHDOG was stopped");
+                    monitorThread.Join();
+                    Console.WriteLine("download monitor was stopped");
                 }
                 else
                 {
-                    Console.WriteLine("download WATCHDOG is not running !");
+                    Console.WriteLine("download monitor is not running !");
                 }
             }
             private void ReportAlive()
@@ -672,7 +672,7 @@ namespace DepotDownloader
                     if (totalDownloadedBytes > lastDownloadSize)
                     {
                         lastDownloadSize = totalDownloadedBytes;
-                        Console.WriteLine("WATCHDOG : {0}", Util.FormatFileSize((long)lastDownloadSize));
+                        Console.WriteLine("Downloaded : {0}", Util.FormatFileSize((long)lastDownloadSize));
                     }
                     threadWait.WaitOne(interval);
                 }
@@ -687,13 +687,13 @@ namespace DepotDownloader
             cdnPool.ExhaustedToken = cts;
 
             var downloadCounter = new GlobalDownloadCounter();
-            var downloadWatchdog = new DownloadWatchdog(downloadCounter);
+            var downloadMonitor = new DownloadMonitor(downloadCounter);
             var depotsToDownload = new List<DepotFilesData>(depots.Count);
             var allFileNamesAllDepots = new HashSet<string>();
 
             try
             {
-                downloadWatchdog.Start();
+                downloadMonitor.Start();
                 // First, fetch all the manifests for each depot (including previous manifests) and perform the initial setup
                 foreach (var depot in depots)
                 {
@@ -744,7 +744,7 @@ namespace DepotDownloader
             }
             finally
             {
-                downloadWatchdog.Stop();
+                downloadMonitor.Stop();
             }
         }
 
