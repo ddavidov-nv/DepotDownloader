@@ -1215,33 +1215,18 @@ namespace DepotDownloader
                     Console.WriteLine("Validating {0}", fileFinalPath);
                     neededChunks = Util.ValidateSteam3FileChecksums(fs, [.. file.Chunks.OrderBy(x => x.Offset)]);
                 }
-
+                var negativeOne = unchecked((ulong)(-1));
                 if (neededChunks.Count == 0)
                 {
-                    lock (depotDownloadCounter)
-                    {
-                        depotDownloadCounter.sizeDownloaded += file.TotalSize;
-                        Console.WriteLine("{0,6:#00.00}% {1}", (depotDownloadCounter.sizeDownloaded / (float)depotDownloadCounter.completeDownloadSize) * 100.0f, fileFinalPath);
-                    }
-
-                    lock (downloadCounter)
-                    {
-                        downloadCounter.completeDownloadSize -= file.TotalSize;
-                    }
-
+                    Interlocked.Add(ref depotDownloadCounter.sizeDownloaded, file.TotalSize);
+                    Console.WriteLine("{0,6:#00.00}% {1}", (depotDownloadCounter.sizeDownloaded / (float)depotDownloadCounter.completeDownloadSize) * 100.0f, fileFinalPath);
+                    Interlocked.Add(ref downloadCounter.completeDownloadSize, negativeOne * file.TotalSize);
                     return;
                 }
 
                 var sizeOnDisk = (file.TotalSize - (ulong)neededChunks.Select(x => (long)x.UncompressedLength).Sum());
-                lock (depotDownloadCounter)
-                {
-                    depotDownloadCounter.sizeDownloaded += sizeOnDisk;
-                }
-
-                lock (downloadCounter)
-                {
-                    downloadCounter.completeDownloadSize -= sizeOnDisk;
-                }
+                Interlocked.Add(ref depotDownloadCounter.sizeDownloaded, sizeOnDisk);
+                Interlocked.Add(ref downloadCounter.completeDownloadSize, negativeOne * sizeOnDisk);
             }
 
             var fileIsExecutable = file.Flags.HasFlag(EDepotFileFlag.Executable);
@@ -1312,8 +1297,6 @@ namespace DepotDownloader
                             var result = await authTokenCallbackPromise.Task;
                             cdnToken = result.Token;
                         }
-
-                        DebugLog.WriteLine("ContentDownloader", "Downloading chunk {0} from {1} with {2}", chunkID, connection, cdnPool.ProxyServer != null ? cdnPool.ProxyServer : "no proxy");
                         written = await cdnPool.CDNClient.DownloadDepotChunkAsync(
                             depot.DepotId,
                             data,
@@ -1324,7 +1307,6 @@ namespace DepotDownloader
                             cdnToken).ConfigureAwait(false);
 
                         cdnPool.ReturnConnection(connection);
-
                         break;
                     }
                     catch (TaskCanceledException)
@@ -1364,6 +1346,7 @@ namespace DepotDownloader
                         cdnPool.ReturnBrokenConnection(connection);
                         Console.WriteLine("Encountered unexpected error downloading chunk {0}: {1}", chunkID, e.Message);
                     }
+
                 } while (written == 0);
 
                 if (written == 0)
@@ -1405,22 +1388,12 @@ namespace DepotDownloader
                 fileStreamData.fileLock.Dispose();
             }
 
-            ulong sizeDownloaded = 0;
-            lock (depotDownloadCounter)
-            {
-                sizeDownloaded = depotDownloadCounter.sizeDownloaded + (ulong)written;
-                depotDownloadCounter.sizeDownloaded = sizeDownloaded;
-                depotDownloadCounter.depotBytesCompressed += chunk.CompressedLength;
-                depotDownloadCounter.depotBytesUncompressed += chunk.UncompressedLength;
-            }
-
-            lock (downloadCounter)
-            {
-                downloadCounter.totalBytesCompressed += chunk.CompressedLength;
-                downloadCounter.totalBytesUncompressed += chunk.UncompressedLength;
-
-                Ansi.Progress(downloadCounter.totalBytesUncompressed, downloadCounter.completeDownloadSize);
-            }
+            var sizeDownloaded = Interlocked.Add(ref depotDownloadCounter.sizeDownloaded, (ulong)written);
+            Interlocked.Add(ref depotDownloadCounter.depotBytesCompressed, chunk.CompressedLength);
+            Interlocked.Add(ref depotDownloadCounter.depotBytesUncompressed, chunk.UncompressedLength);
+            Interlocked.Add(ref downloadCounter.totalBytesCompressed, chunk.CompressedLength);
+            Interlocked.Add(ref downloadCounter.totalBytesUncompressed, chunk.UncompressedLength);
+            Ansi.Progress(downloadCounter.totalBytesUncompressed, downloadCounter.completeDownloadSize);
 
             if (remainingChunks == 0)
             {
