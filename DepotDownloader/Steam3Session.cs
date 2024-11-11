@@ -234,17 +234,37 @@ namespace DepotDownloader
             if (DepotKeys.ContainsKey(depotId) || bAborted)
                 return;
 
-            var depotKey = await steamApps.GetDepotDecryptionKey(depotId, appid);
-
-            Console.WriteLine("Got depot key for {0} result: {1}", depotKey.DepotID, depotKey.Result);
-
-            if (depotKey.Result != EResult.OK)
+            for (var i = 0; i < 30; i++)
             {
-                Abort();
-                return;
-            }
+                try
+                {
+                    var depotKey = await steamApps.GetDepotDecryptionKey(depotId, appid);
 
-            DepotKeys[depotKey.DepotID] = depotKey.DepotKey;
+                    Console.WriteLine($"Got depot key for {depotKey.DepotID} result: {depotKey.Result}");
+
+                    if (depotKey.Result != EResult.OK)
+                    {
+                        Abort();
+                        return;
+                    }
+
+                    DepotKeys[depotKey.DepotID] = depotKey.DepotKey;
+                    if (i > 0)
+                    {
+                        Console.WriteLine($"Warning: GetDepotDecryptionKey worked after {i} retries for depot {depotId}");
+
+                    }
+                    return;
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error while getting depot {depotId} , {ex.Message}");
+                    await Task.Delay(1000);
+
+                }
+            }
+            throw new Exception($"max retries getting depot {depotId} key is exceeded");
         }
 
 
