@@ -22,12 +22,13 @@ namespace DepotDownloader
                 try
                 {
                     await operation();
+                    return;
                 }
                 catch (Exception ex) when (retryCount < maxRetries)
                 {
                     retryCount++;
                     var delay = initialDelay * (int)Math.Pow(2, retryCount - 1);
-                    Console.WriteLine($"Attempt {retryCount} failed: {ex.Message}. Retrying in {delay}ms.");
+                    Console.WriteLine($"Error: Attempt {retryCount} failed: {ex.Message}. Retrying in {delay}ms.");
                     await Task.Delay(delay);
                 }
             }
