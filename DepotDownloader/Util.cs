@@ -14,6 +14,25 @@ namespace DepotDownloader
 {
     static class Util
     {
+        public static async Task ExecuteWithRetry(Func<Task> operation, int maxRetries = 3, int initialDelay = 1000)
+        {
+            var retryCount = 0;
+            while (true)
+            {
+                try
+                {
+                    await operation();
+                }
+                catch (Exception ex) when (retryCount < maxRetries)
+                {
+                    retryCount++;
+                    var delay = initialDelay * (int)Math.Pow(2, retryCount - 1);
+                    Console.WriteLine($"Attempt {retryCount} failed: {ex.Message}. Retrying in {delay}ms.");
+                    await Task.Delay(delay);
+                }
+            }
+        }
+
         public static string FormatFileSize(long bytes)
         {
             string[] suffixes = { "B", "KB", "MB", "GB", "TB", "PB", "EB" };
