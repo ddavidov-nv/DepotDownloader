@@ -25,6 +25,7 @@ namespace DepotDownloader
         public const uint INVALID_DEPOT_ID = uint.MaxValue;
         public const ulong INVALID_MANIFEST_ID = ulong.MaxValue;
         public const string DEFAULT_BRANCH = "public";
+        public const long FILE_SIZE_THRESHOLD = 5000000000;
 
         public static DownloadConfig Config = new();
 
@@ -1091,6 +1092,18 @@ namespace DepotDownloader
             }
 
             List<ProtoManifest.ChunkData> neededChunks;
+
+            if (File.Exists(fileFinalPath))
+            {
+                if ((oldManifestFile == null) || (file.TotalSize > FILE_SIZE_THRESHOLD && !oldManifestFile.FileHash.SequenceEqual(file.FileHash)))
+                {
+                    File.Delete(fileFinalPath);
+                    oldProtoManifest = null;
+                    Console.WriteLine("Re-downloading outdated file {0} due size threshold for updating ({1} >? {2}) or missing old manifest", file.FileName, Util.FormatFileSize((long)file.TotalSize), Util.FormatFileSize(FILE_SIZE_THRESHOLD));
+                }
+
+            }
+
             var fi = new FileInfo(fileFinalPath);
             var fileDidExist = fi.Exists;
             if (!fileDidExist)
