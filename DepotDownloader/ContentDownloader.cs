@@ -1093,13 +1093,13 @@ namespace DepotDownloader
 
             List<ProtoManifest.ChunkData> neededChunks;
 
-            if (File.Exists(fileFinalPath))
+            if (Config.RedownloadOutdatedFiles && File.Exists(fileFinalPath))
             {
-                if ((oldManifestFile == null) || (file.TotalSize > FILE_SIZE_THRESHOLD && !oldManifestFile.FileHash.SequenceEqual(file.FileHash)))
+                if ((oldManifestFile == null) || (!oldManifestFile.FileHash.SequenceEqual(file.FileHash)))
                 {
                     File.Delete(fileFinalPath);
                     oldProtoManifest = null;
-                    Console.WriteLine("Re-downloading outdated file {0} due size threshold for updating ({1} >? {2}) or missing old manifest", file.FileName, Util.FormatFileSize((long)file.TotalSize), Util.FormatFileSize(FILE_SIZE_THRESHOLD));
+                    Console.WriteLine("Re-downloading outdated file {0}", file.FileName);
                 }
 
             }

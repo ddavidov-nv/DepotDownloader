@@ -116,6 +116,7 @@ namespace DepotDownloader
 
             ContentDownloader.Config.InstallDirectory = GetParameter<string>(args, "-dir");
             ContentDownloader.Config.SeparateDepots = HasParameter(args, "-separate-depots");
+            ContentDownloader.Config.RedownloadOutdatedFiles = HasParameter(args, "-redownload-outdated-files");
 
             ContentDownloader.Config.VerifyAll = HasParameter(args, "-verify-all") || HasParameter(args, "-verify_all") || HasParameter(args, "-validate");
             ContentDownloader.Config.MaxServers = GetParameter(args, "-max-servers", 20);

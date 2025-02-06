@@ -33,5 +33,6 @@ namespace DepotDownloader
 
         public bool UseQrCode { get; set; }
         public bool SeparateDepots { get; set; }
+        public bool RedownloadOutdatedFiles { get; set; }
     }
 }
