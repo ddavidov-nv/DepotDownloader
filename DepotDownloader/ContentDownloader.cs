@@ -669,7 +669,7 @@ namespace DepotDownloader
             {
                 while (running)
                 {
-                    var totalDownloadedBytes = globalDownloadCounter.totalBytesUncompressed + globalDownloadCounter.totalBytesCompressed;
+                    var totalDownloadedBytes = globalDownloadCounter.totalBytesUncompressed;
                     if (totalDownloadedBytes > lastDownloadSize)
                     {
                         lastDownloadSize = totalDownloadedBytes;
