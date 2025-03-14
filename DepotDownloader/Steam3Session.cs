@@ -89,7 +89,7 @@ namespace DepotDownloader
 
         public delegate bool WaitCondition();
 
-        private readonly object steamLock = new();
+        private readonly Lock steamLock = new();
 
         public bool WaitUntilCallback(Action submitter, WaitCondition waiter)
         {
@@ -221,12 +221,19 @@ namespace DepotDownloader
                 }
             }
         }
-
         public async Task<bool> RequestFreeAppLicense(uint appId)
         {
-            var resultInfo = await steamApps.RequestFreeLicense(appId);
+            try
+            {
+                var resultInfo = await steamApps.RequestFreeLicense(appId);
 
-            return resultInfo.GrantedApps.Contains(appId);
+                return resultInfo.GrantedApps.Contains(appId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to request FreeOnDemand license for app {appId}: {ex.Message}");
+                return false;
+            }
         }
 
         public async Task RequestDepotKey(uint depotId, uint appid = 0)
@@ -241,15 +248,13 @@ namespace DepotDownloader
 
                 if (depotKey.Result != EResult.OK)
                 {
-                    Abort();
                     return;
                 }
 
                 DepotKeys[depotKey.DepotID] = depotKey.DepotKey;
-            }, 10);
+            }, 5);
+
         }
-
-
         public async Task<ulong> GetDepotManifestRequestCodeAsync(uint depotId, uint appId, ulong manifestId, string branch)
         {
             if (bAborted)
@@ -257,9 +262,14 @@ namespace DepotDownloader
 
             var requestCode = await steamContent.GetManifestRequestCode(depotId, appId, manifestId, branch);
 
-            Console.WriteLine("Got manifest request code for {0} {1} result: {2}",
-                depotId, manifestId,
-                requestCode);
+            if (requestCode == 0)
+            {
+                Console.WriteLine($"No manifest request code was returned for depot {depotId} from app {appId}, manifest {manifestId}");
+            }
+            else
+            {
+                Console.WriteLine($"Got manifest request code for depot {depotId} from app {appId}, manifest {manifestId}, result: {requestCode}");
+            }
 
             return requestCode;
         }

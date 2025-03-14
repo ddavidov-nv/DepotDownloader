@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using SteamKit2;
+using SteamKit2.CDN;
 
 namespace DepotDownloader
 {
@@ -63,6 +64,20 @@ namespace DepotDownloader
             var password = GetParameter<string>(args, "-password") ?? GetParameter<string>(args, "-pass");
             ContentDownloader.Config.RememberPassword = HasParameter(args, "-remember-password");
             ContentDownloader.Config.UseQrCode = HasParameter(args, "-qr");
+            if (username == null)
+            {
+                if (ContentDownloader.Config.RememberPassword)
+                {
+                    Console.WriteLine("Error: -remember-password can not be used without -username.");
+                    return 1;
+                }
+
+                if (ContentDownloader.Config.UseQrCode)
+                {
+                    Console.WriteLine("Error: -qr can not be used without -username.");
+                    return 1;
+                }
+            }
 
             ContentDownloader.Config.DownloadManifestOnly = HasParameter(args, "-manifest-only");
 
@@ -120,6 +135,21 @@ namespace DepotDownloader
 
             ContentDownloader.Config.VerifyAll = HasParameter(args, "-verify-all") || HasParameter(args, "-verify_all") || HasParameter(args, "-validate");
             ContentDownloader.Config.MaxServers = GetParameter(args, "-max-servers", 20);
+            if (HasParameter(args, "-use-lancache"))
+            {
+                await Client.DetectLancacheServerAsync();
+                if (Client.UseLancacheServer)
+                {
+                    Console.WriteLine("Detected Lancache server! Downloads will be directed through the Lancache.");
+
+                    // Increasing the number of concurrent downloads when the cache is detected since the downloads will likely
+                    // be served much faster than over the internet.  Steam internally has this behavior as well.
+                    if (!HasParameter(args, "-max-downloads"))
+                    {
+                        ContentDownloader.Config.MaxDownloads = 25;
+                    }
+                }
+            }
             ContentDownloader.Config.MaxDownloads = GetParameter(args, "-max-downloads", 8);
             ContentDownloader.Config.MaxServers = Math.Max(ContentDownloader.Config.MaxServers, ContentDownloader.Config.MaxDownloads);
             ContentDownloader.Config.LoginID = HasParameter(args, "-loginid") ? GetParameter<uint>(args, "-loginid") : null;
@@ -424,7 +454,8 @@ namespace DepotDownloader
             Console.WriteLine();
             Console.WriteLine("  -username <user>         - the username of the account to login to for restricted content.");
             Console.WriteLine("  -password <pass>         - the password of the account to login to for restricted content.");
-            Console.WriteLine("  -remember-password       - if set, remember the password for subsequent logins of this user. (Use -username <username> -remember-password as login credentials)");
+            Console.WriteLine("  -remember-password       - if set, remember the password for subsequent logins of this user.");
+            Console.WriteLine("                             use -username <username> -remember-password as login credentials.");
             Console.WriteLine();
             Console.WriteLine("  -dir <installdir>        - the directory in which to place downloaded files.");
             Console.WriteLine("  -filelist <file.txt>     - a list of files to download (from the manifest). Prefix file path with 'regex:' if you want to match with regex.");
