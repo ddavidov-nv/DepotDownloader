@@ -466,6 +466,7 @@ namespace DepotDownloader
             Console.WriteLine("  -max-servers <#>         - maximum number of content servers to use. (default: 20).");
             Console.WriteLine("  -max-downloads <#>       - maximum number of chunks to download concurrently. (default: 8).");
             Console.WriteLine("  -loginid <#>             - a unique 32-bit integer Steam LogonID in decimal, required if running multiple instances of DepotDownloader concurrently.");
+            Console.WriteLine("  -use-lancache            - forces downloads over the local network via a Lancache instance.");
         }
 
         static void PrintVersion(bool printExtra = false)

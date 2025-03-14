@@ -1430,16 +1430,9 @@ namespace DepotDownloader
 
             foreach (var file in manifest.Files)
             {
-
-
-
-
-
-
                 foreach (var chunk in file.Chunks)
                 {
                     uniqueChunks.Add(chunk.ChunkID);
-
                 }
             }
 
