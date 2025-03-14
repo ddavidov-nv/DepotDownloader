@@ -723,7 +723,11 @@ namespace DepotDownloader
                         depotsToDownload.Add(depotFileData);
                         allFileNamesAllDepots.UnionWith(depotFileData.allFileNames);
                     }
-
+                    else
+                    {
+                        Console.WriteLine("Error: skipping depot {0} from app {1} with manifest {2}. could not get depot data", depot.DepotId, depot.AppId, depot.ManifestId);
+                        continue;
+                    }
                     cts.Token.ThrowIfCancellationRequested();
                 }
 
@@ -848,6 +852,7 @@ namespace DepotDownloader
                                 {
 
                                     cts.Cancel();
+                                    return null;
                                 }
                             }
 
