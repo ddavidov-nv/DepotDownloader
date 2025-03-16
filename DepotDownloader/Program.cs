@@ -19,6 +19,7 @@ namespace DepotDownloader
     {
         static async Task<int> Main(string[] args)
         {
+            //args = ["-app","3483400", "-username", "*****", "-max-downloads", "128", "-dir", "C:\\GameBuilds\\test12\\depots", "-depot", "3483400", "-manifest", "154438109621168119", "-redownload-outdated-files", "-password", "***", "-remember-password", "-separate-depots"];
             if (args.Length == 0)
             {
                 PrintVersion();

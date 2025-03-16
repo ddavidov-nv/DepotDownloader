@@ -439,7 +439,8 @@ namespace DepotDownloader
                 else
                 {
                     var contentName = GetAppName(appId);
-                    throw new ContentDownloaderException(string.Format("App {0} ({1}) is not available from this account.", appId, contentName));
+                    Console.WriteLine(string.Format("Error: App {0} ({1}) is not available from this account.", appId, contentName));
+                    return;
                 }
             }
 
