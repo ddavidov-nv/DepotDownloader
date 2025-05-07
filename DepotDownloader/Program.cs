@@ -19,7 +19,7 @@ namespace DepotDownloader
     {
         static async Task<int> Main(string[] args)
         {
-            //args = ["-app","3483400", "-username", "*****", "-max-downloads", "128", "-dir", "C:\\GameBuilds\\test12\\depots", "-depot", "3483400", "-manifest", "154438109621168119", "-redownload-outdated-files", "-password", "***", "-remember-password", "-separate-depots"];
+            args = ["-app", "2399830", "-username", "nvgtlgpdsgfn4041", "-max-downloads", "128", "-dir", "C:\\GameBuilds\\test12\\depots", "-depot", "2399831", "-manifest", "6770552451231893277", "-leverage-bandwidth", "-password", "zxntz05G72hTLx", "-remember-password", "-depot-layout"];
             if (args.Length == 0)
             {
                 PrintVersion();
@@ -131,8 +131,9 @@ namespace DepotDownloader
             }
 
             ContentDownloader.Config.InstallDirectory = GetParameter<string>(args, "-dir");
-            ContentDownloader.Config.SeparateDepots = HasParameter(args, "-separate-depots");
-            ContentDownloader.Config.RedownloadOutdatedFiles = HasParameter(args, "-redownload-outdated-files");
+            ContentDownloader.Config.DepotLayout = HasParameter(args, "-depot-layout");
+
+            ContentDownloader.Config.LeverageBandwidth = HasParameter(args, "-leverage-bandwidth");
 
             ContentDownloader.Config.VerifyAll = HasParameter(args, "-verify-all") || HasParameter(args, "-verify_all") || HasParameter(args, "-validate");
             ContentDownloader.Config.MaxServers = GetParameter(args, "-max-servers", 20);
