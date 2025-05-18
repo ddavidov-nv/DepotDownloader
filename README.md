@@ -81,7 +81,7 @@ Parameter               | Description
 `-password <pass>`		| the password of the account to login to for restricted content.
 `-remember-password`	| if set, remember the password for subsequent logins of this user. (Use `-username <username> -remember-password` as login credentials)
 `-dir <installdir>`     | the directory in which to place downloaded files.
--separate-depots		| should each depot be downloaded to a separate folder.
+`-separate-depots`		| each depot will be downloaded to its own folder..
 `-filelist <file.txt>`	| a list of files to download (from the manifest). Prefix file path with `regex:` if you want to match with regex.
 `-validate`				| Include checksum verification of files already downloaded
 `-manifest-only`		| downloads a human readable manifest for any depots that would be downloaded.

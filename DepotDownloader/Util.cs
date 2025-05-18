@@ -40,9 +40,10 @@ namespace DepotDownloader
             string[] suffixes = { "B", "KB", "MB", "GB", "TB", "PB", "EB" };
             var counter = 0;
             var number = (decimal)bytes;
-            while (Math.Round(number / 1024) >= 1)
+            const int kilo = 1024;
+            while (Math.Round(number / kilo) >= 1)
             {
-                number /= 1024;
+                number /= kilo;
                 counter++;
             }
             return string.Format("{0:n1} {1}", number, suffixes[counter]);
