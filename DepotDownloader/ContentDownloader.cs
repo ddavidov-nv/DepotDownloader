@@ -650,6 +650,8 @@ namespace DepotDownloader
             public ulong depotBytesCompressed;
             public ulong depotBytesUncompressed;
         }
+		
+		#### docuement the class (Cursor is great for that)
         private sealed class DownloadMonitor : IDisposable
         {
             private readonly GlobalDownloadCounter globalDownloadCounter;
@@ -1091,6 +1093,7 @@ namespace DepotDownloader
 
             if (Config.LeverageBandwidth && File.Exists(fileFinalPath))
             {
+				### Add documentation here - why do we do that? what are the conditions to do that?
                 if ((oldManifestFile == null) || (!oldManifestFile.FileHash.SequenceEqual(file.FileHash)))
                 {
                     File.Delete(fileFinalPath);
