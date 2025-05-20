@@ -460,7 +460,7 @@ namespace DepotDownloader
             Console.WriteLine();
             Console.WriteLine("  -dir <installdir>        - the directory in which to place downloaded files.");
             Console.WriteLine("  -filelist <file.txt>     - a list of files to download (from the manifest). Prefix file path with 'regex:' if you want to match with regex.");
-            Console.WriteLine("  -validate                - include checksum verification of files already downloaded");
+            Console.WriteLine("  -validate                - Include checksum verification of files already downloaded");
             Console.WriteLine();
             Console.WriteLine("  -manifest-only           - downloads a human readable manifest for any depots that would be downloaded.");
             Console.WriteLine("  -cellid <#>              - the overridden CellID of the content server to download from.");

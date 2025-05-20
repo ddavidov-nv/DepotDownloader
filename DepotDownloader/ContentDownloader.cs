@@ -651,7 +651,6 @@ namespace DepotDownloader
             public ulong depotBytesUncompressed;
         }
 
-        #### Docuemnt the class
         private class DownloadMonitor(GlobalDownloadCounter globalDownloadCounter)
         {
             readonly GlobalDownloadCounter globalDownloadCounter = globalDownloadCounter;
@@ -1072,7 +1071,6 @@ namespace DepotDownloader
 
             if (Config.RedownloadOutdatedFiles && File.Exists(fileFinalPath))
             {
-                ### Add documentation here - why do we do that? what are the conditions to do that?
                 if ((oldManifestFile == null) || (!oldManifestFile.FileHash.SequenceEqual(file.FileHash)))
                 {
                     File.Delete(fileFinalPath);

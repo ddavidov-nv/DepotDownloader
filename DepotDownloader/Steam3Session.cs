@@ -89,7 +89,7 @@ namespace DepotDownloader
 
         public delegate bool WaitCondition();
 
-        private readonly Lock steamLock = new();
+        private readonly Object steamLock = new();
 
         public bool WaitUntilCallback(Action submitter, WaitCondition waiter)
         {
