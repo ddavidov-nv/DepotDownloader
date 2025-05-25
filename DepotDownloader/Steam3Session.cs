@@ -221,6 +221,7 @@ namespace DepotDownloader
                 }
             }
         }
+
         public async Task<bool> RequestFreeAppLicense(uint appId)
         {
             try
@@ -314,6 +315,7 @@ namespace DepotDownloader
                 AppBetaPasswords[entry.Key] = entry.Value;
             }
         }
+
         public async Task<KeyValue> GetPrivateBetaDepotSection(uint appid, string branch)
         {
             if (!AppBetaPasswords.TryGetValue(branch, out var branchPassword)) // Should be filled by CheckAppBetaPassword
@@ -440,6 +442,7 @@ namespace DepotDownloader
                     {
                         try
                         {
+                            _ = AccountSettingsStore.Instance.GuardData.TryGetValue(logonDetails.Username, out var guarddata);
                             authSession = await steamClient.Authentication.BeginAuthSessionViaCredentialsAsync(new AuthSessionDetails
                             {
                                 DeviceFriendlyName = nameof(DepotDownloader),
@@ -513,6 +516,7 @@ namespace DepotDownloader
                         if (result.NewGuardData != null)
                         {
                             AccountSettingsStore.Instance.GuardData[result.AccountName] = result.NewGuardData;
+
                             if (ContentDownloader.Config.UseQrCode)
                             {
                                 Console.WriteLine($"Success! Next time you can login with -username {result.AccountName} -remember-password instead of -qr.");
@@ -522,6 +526,7 @@ namespace DepotDownloader
                         {
                             AccountSettingsStore.Instance.GuardData.Remove(result.AccountName);
                         }
+
                         AccountSettingsStore.Instance.LoginTokens[result.AccountName] = result.RefreshToken;
                         AccountSettingsStore.Save();
                     }
@@ -705,6 +710,7 @@ namespace DepotDownloader
             var qrCodeAsAsciiArt = qrCode.GetLineByLineGraphic(1, drawQuietZones: true);
 
             Console.WriteLine("Use the Steam Mobile App to sign in with this QR code:");
+
             foreach (var line in qrCodeAsAsciiArt)
             {
                 Console.WriteLine(line);

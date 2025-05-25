@@ -16,8 +16,6 @@ namespace DepotDownloader
     /// </summary>
     class CDNClientPool
     {
-
-
         private readonly Steam3Session steamSession;
         private readonly uint appId;
         public Client CDNClient { get; }
@@ -48,8 +46,6 @@ namespace DepotDownloader
                 .Select(server =>
                 {
                     AccountSettingsStore.Instance.ContentServerPenalty.TryGetValue(server.Host, out var penalty);
-
-
                     return (server, penalty);
                 })
                 .OrderBy(pair => pair.penalty).ThenBy(pair => pair.server.WeightedLoad);
@@ -57,15 +53,12 @@ namespace DepotDownloader
             foreach (var (server, weight) in weightedCdnServers)
             {
                 for (var i = 0; i < server.NumEntries; i++)
-
                 {
                     this.servers.Add(server);
-
                 }
             }
 
             if (this.servers.Count == 0)
-
             {
                 throw new Exception("Failed to retrieve any download servers.");
             }
@@ -74,7 +67,6 @@ namespace DepotDownloader
         public Server GetConnection()
         {
             return servers[nextServer % servers.Count];
-
         }
 
         public void ReturnConnection(Server server)

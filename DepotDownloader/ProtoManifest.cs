@@ -158,6 +158,7 @@ namespace DepotDownloader
             using var ds = new DeflateStream(fs, CompressionMode.Compress);
             ms.CopyTo(ds);
         }
+
         public DepotManifest ConvertToSteamManifest(uint depotId)
         {
             ulong uncompressedSize = 0, compressedSize = 0;
@@ -191,6 +192,5 @@ namespace DepotDownloader
 
             return newManifest;
         }
-
     }
 }

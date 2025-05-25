@@ -132,10 +132,12 @@ namespace DepotDownloader
                         return true;
                 }
             }
+
             // Check if this app is free to download without a license
             var info = GetSteam3AppSection(appId, EAppInfoSection.Common);
             if (info != null && info["FreeToDownload"].AsBoolean())
                 return true;
+
             return false;
         }
 
@@ -184,6 +186,7 @@ namespace DepotDownloader
 
             return uint.Parse(buildid.Value);
         }
+
         static uint GetSteam3DepotProxyAppId(uint depotId, uint appId)
         {
             var depots = GetSteam3AppSection(appId, EAppInfoSection.Depots);
@@ -197,6 +200,7 @@ namespace DepotDownloader
 
             return depotChild["depotfromapp"].AsUnsignedInteger();
         }
+
         static async Task<ulong> GetSteam3DepotManifest(uint depotId, uint appId, string branch)
         {
             var depots = GetSteam3AppSection(appId, EAppInfoSection.Depots);
@@ -225,7 +229,6 @@ namespace DepotDownloader
             }
 
             var manifests = depotChild["manifests"];
-
 
             if (manifests.Children.Count == 0)
                 return INVALID_MANIFEST_ID;
@@ -262,8 +265,6 @@ namespace DepotDownloader
             // Got the password, request private depot section
             // TODO: We're probably repeating this request for every depot?
             var privateDepotSection = await steam3.GetPrivateBetaDepotSection(appId, branch);
-
-
 
             // Now repeat the same code to get the manifest gid from depot section
             depotChild = privateDepotSection[depotId.ToString()];
@@ -326,7 +327,6 @@ namespace DepotDownloader
 
         public static void ShutdownSteam3()
         {
-
             if (steam3 == null)
                 return;
 
@@ -540,7 +540,9 @@ namespace DepotDownloader
                     infos.Add(info);
                 }
             }
+
             Console.WriteLine();
+
             try
             {
                 await DownloadSteam3Async(infos).ConfigureAwait(false);
@@ -597,7 +599,6 @@ namespace DepotDownloader
                 Console.WriteLine("Error: Unable to create install directories!");
                 return null;
             }
-
             // For depots that are proxied through depotfromapp, we still need to resolve the proxy app id
             var containingAppId = appId;
             var proxyAppId = GetSteam3DepotProxyAppId(depotId, appId);
@@ -609,7 +610,6 @@ namespace DepotDownloader
                     containingAppId = proxyAppId;
                 }
             }
-
 
             return new DepotDownloadInfo(depotId, containingAppId, manifestId, branch, installDir, depotKey);
         }
@@ -727,7 +727,9 @@ namespace DepotDownloader
         private static async Task DownloadSteam3Async(List<DepotDownloadInfo> depots)
         {
             Ansi.Progress(Ansi.ProgressState.Indeterminate);
+
             await cdnPool.UpdateServerList();
+
             var cts = new CancellationTokenSource();
 
             var downloadCounter = new GlobalDownloadCounter();
@@ -815,7 +817,6 @@ namespace DepotDownloader
                 // We only have to show this warning if the old manifest ID was different
                 var badHashWarning = (lastManifestId != depot.ManifestId);
                 oldManifest = Util.LoadManifestFromFile(configDir, depot.DepotId, lastManifestId, badHashWarning);
-
             }
 
             if (lastManifestId == depot.ManifestId && oldManifest != null)
@@ -834,7 +835,6 @@ namespace DepotDownloader
                 else
                 {
                     Console.WriteLine($"Downloading depot {depot.DepotId} manifest");
-
 
                     ulong manifestRequestCode = 0;
                     var manifestRequestCodeExpiration = DateTime.MinValue;
@@ -873,7 +873,6 @@ namespace DepotDownloader
                                 // If we could not get the manifest code, this is a fatal error
                                 if (manifestRequestCode == 0)
                                 {
-
                                     cts.Cancel();
                                     return null;
                                 }
@@ -948,13 +947,10 @@ namespace DepotDownloader
                     cts.Token.ThrowIfCancellationRequested();
 
                     Util.SaveManifestToFile(configDir, newManifest);
-
                 }
             }
 
             Console.WriteLine("Manifest {0} ({1})", depot.ManifestId, newManifest.CreationTime);
-
-
 
             if (Config.DownloadManifestOnly)
             {
@@ -1002,6 +998,7 @@ namespace DepotDownloader
                 allFileNames = allFileNames
             };
         }
+
         private static async Task DownloadSteam3AsyncDepotFiles(CancellationTokenSource cts,
             GlobalDownloadCounter downloadCounter, DepotFilesData depotFilesData, HashSet<string> allFileNamesAllDepots)
         {
@@ -1032,7 +1029,6 @@ namespace DepotDownloader
                     q.fileData, q.fileStreamData, q.chunk
                 );
             });
-
 
             // Check for deleted files if updating the depot.
             if (depotFilesData.previousManifest != null)
@@ -1234,6 +1230,7 @@ namespace DepotDownloader
                     Console.WriteLine("Validating {0}", fileFinalPath);
                     neededChunks = Util.ValidateSteam3FileChecksums(fs, [.. file.Chunks.OrderBy(x => x.Offset)]);
                 }
+
                 if (neededChunks.Count == 0)
                 {
                     lock (depotDownloadCounter)
@@ -1299,6 +1296,7 @@ namespace DepotDownloader
             var depotDownloadCounter = depotFilesData.depotCounter;
 
             var chunkID = Convert.ToHexString(chunk.ChunkID).ToLowerInvariant();
+
             var written = 0;
             var chunkBuffer = ArrayPool<byte>.Shared.Rent((int)chunk.UncompressedLength);
 
@@ -1320,6 +1318,8 @@ namespace DepotDownloader
                             var result = await authTokenCallbackPromise.Task;
                             cdnToken = result.Token;
                         }
+
+
                         DebugLog.WriteLine("ContentDownloader", "Downloading chunk {0} from {1} with {2}", chunkID, connection, cdnPool.ProxyServer != null ? cdnPool.ProxyServer : "no proxy");
                         written = await cdnPool.CDNClient.DownloadDepotChunkAsync(
                             depot.DepotId,
@@ -1331,6 +1331,7 @@ namespace DepotDownloader
                             cdnToken).ConfigureAwait(false);
 
                         cdnPool.ReturnConnection(connection);
+
                         break;
                     }
                     catch (TaskCanceledException)
@@ -1371,7 +1372,6 @@ namespace DepotDownloader
                         cdnPool.ReturnBrokenConnection(connection);
                         Console.WriteLine("Encountered unexpected error downloading chunk {0}: {1}", chunkID, e.Message);
                     }
-
                 } while (written == 0);
 
                 if (written == 0)
@@ -1436,6 +1436,7 @@ namespace DepotDownloader
                 Console.WriteLine("{0,6:#00.00}% {1}", (sizeDownloaded / (float)depotDownloadCounter.completeDownloadSize) * 100.0f, fileFinalPath);
             }
         }
+
         class ChunkIdComparer : IEqualityComparer<byte[]>
         {
             public bool Equals(byte[] x, byte[] y)
@@ -1453,6 +1454,7 @@ namespace DepotDownloader
                 return BitConverter.ToInt32(obj, 0);
             }
         }
+
         static void DumpManifestToTextFile(DepotDownloadInfo depot, DepotManifest manifest)
         {
             var txtManifest = Path.Combine(depot.InstallDir, $"manifest_{depot.DepotId}_{depot.ManifestId}.txt");
@@ -1463,7 +1465,6 @@ namespace DepotDownloader
             sw.WriteLine($"Manifest ID / date     : {depot.ManifestId} / {manifest.CreationTime} ");
 
             var uniqueChunks = new HashSet<byte[]>(new ChunkIdComparer());
-
 
             foreach (var file in manifest.Files)
             {

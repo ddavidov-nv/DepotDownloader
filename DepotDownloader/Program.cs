@@ -18,6 +18,7 @@ namespace DepotDownloader
     class Program
     {
         private static bool[] consumedArgs;
+
         static async Task<int> Main(string[] args)
         {
             if (args.Length == 0)
@@ -47,7 +48,9 @@ namespace DepotDownloader
                 PrintVersion(true);
                 return 0;
             }
+
             consumedArgs = new bool[args.Length];
+
             if (HasParameter(args, "-debug"))
             {
                 PrintVersion(true);
@@ -66,6 +69,7 @@ namespace DepotDownloader
             ContentDownloader.Config.RememberPassword = HasParameter(args, "-remember-password");
             ContentDownloader.Config.UseQrCode = HasParameter(args, "-qr");
             ContentDownloader.Config.SkipAppConfirmation = HasParameter(args, "-no-mobile");
+
             if (username == null)
             {
                 if (ContentDownloader.Config.RememberPassword && !ContentDownloader.Config.UseQrCode)
@@ -137,7 +141,7 @@ namespace DepotDownloader
             ContentDownloader.Config.LeverageBandwidth = HasParameter(args, "-leverage-bandwidth");
 
             ContentDownloader.Config.VerifyAll = HasParameter(args, "-verify-all") || HasParameter(args, "-verify_all") || HasParameter(args, "-validate");
-            ContentDownloader.Config.MaxServers = GetParameter(args, "-max-servers", 20);
+
             if (HasParameter(args, "-use-lancache"))
             {
                 await Client.DetectLancacheServerAsync();
@@ -153,8 +157,9 @@ namespace DepotDownloader
                     }
                 }
             }
+
             ContentDownloader.Config.MaxDownloads = GetParameter(args, "-max-downloads", 8);
-            ContentDownloader.Config.MaxServers = Math.Max(ContentDownloader.Config.MaxServers, ContentDownloader.Config.MaxDownloads);
+
             ContentDownloader.Config.LoginID = HasParameter(args, "-loginid") ? GetParameter<uint>(args, "-loginid") : null;
 
             #endregion
@@ -171,6 +176,7 @@ namespace DepotDownloader
             if (pubFile != ContentDownloader.INVALID_MANIFEST_ID)
             {
                 #region Pubfile Downloading
+
                 PrintUnconsumedArgs(args);
 
                 if (InitializeSteam(username, password))
@@ -207,7 +213,9 @@ namespace DepotDownloader
             else if (ugcId != ContentDownloader.INVALID_MANIFEST_ID)
             {
                 #region UGC Downloading
+
                 PrintUnconsumedArgs(args);
+
                 if (InitializeSteam(username, password))
                 {
                     try
@@ -303,7 +311,9 @@ namespace DepotDownloader
                 {
                     depotManifestIds.AddRange(depotIdList.Select(depotId => (depotId, ContentDownloader.INVALID_MANIFEST_ID)));
                 }
+
                 PrintUnconsumedArgs(args);
+
                 if (InitializeSteam(username, password))
                 {
                     try
@@ -371,6 +381,7 @@ namespace DepotDownloader
                     Console.WriteLine("No username given. Using anonymous account with dedicated server subscription.");
                 }
             }
+
             if (!string.IsNullOrEmpty(password))
             {
                 const int MAX_PASSWORD_SIZE = 64;
@@ -394,8 +405,10 @@ namespace DepotDownloader
             for (var x = 0; x < args.Length; ++x)
             {
                 if (args[x].Equals(param, StringComparison.OrdinalIgnoreCase))
+                {
                     consumedArgs[x] = true;
                     return x;
+                }
             }
 
             return -1;
@@ -453,6 +466,7 @@ namespace DepotDownloader
 
             return list;
         }
+
         static void PrintUnconsumedArgs(string[] args)
         {
             var printError = false;
@@ -472,7 +486,6 @@ namespace DepotDownloader
                 Console.Error.WriteLine();
             }
         }
-
 
         static void PrintUsage()
         {
