@@ -75,7 +75,6 @@ namespace DepotDownloader
                 if (ContentDownloader.Config.RememberPassword && !ContentDownloader.Config.UseQrCode)
                 {
                     Console.WriteLine("Error: -remember-password can not be used without -username or -qr.");
-
                     return 1;
                 }
             }
@@ -137,7 +136,6 @@ namespace DepotDownloader
 
             ContentDownloader.Config.InstallDirectory = GetParameter<string>(args, "-dir");
             ContentDownloader.Config.DepotLayout = HasParameter(args, "-depot-layout");
-
             ContentDownloader.Config.LeverageBandwidth = HasParameter(args, "-leverage-bandwidth");
 
             ContentDownloader.Config.VerifyAll = HasParameter(args, "-verify-all") || HasParameter(args, "-verify_all") || HasParameter(args, "-validate");
@@ -159,7 +157,6 @@ namespace DepotDownloader
             }
 
             ContentDownloader.Config.MaxDownloads = GetParameter(args, "-max-downloads", 8);
-
             ContentDownloader.Config.LoginID = HasParameter(args, "-loginid") ? GetParameter<uint>(args, "-loginid") : null;
 
             #endregion

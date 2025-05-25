@@ -2,10 +2,8 @@
 // in file 'LICENSE', which is part of this source code package.
 
 using System;
-
 using System.Collections.Generic;
 using System.Linq;
-
 using System.Threading.Tasks;
 using SteamKit2.CDN;
 
@@ -46,6 +44,7 @@ namespace DepotDownloader
                 .Select(server =>
                 {
                     AccountSettingsStore.Instance.ContentServerPenalty.TryGetValue(server.Host, out var penalty);
+
                     return (server, penalty);
                 })
                 .OrderBy(pair => pair.penalty).ThenBy(pair => pair.server.WeightedLoad);

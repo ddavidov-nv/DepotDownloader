@@ -25,6 +25,7 @@ namespace DepotDownloader
         public const uint INVALID_DEPOT_ID = uint.MaxValue;
         public const ulong INVALID_MANIFEST_ID = ulong.MaxValue;
         public const string DEFAULT_BRANCH = "public";
+
         public static DownloadConfig Config = new();
 
         private static Steam3Session steam3;
@@ -1318,7 +1319,6 @@ namespace DepotDownloader
                             var result = await authTokenCallbackPromise.Task;
                             cdnToken = result.Token;
                         }
-
 
                         DebugLog.WriteLine("ContentDownloader", "Downloading chunk {0} from {1} with {2}", chunkID, connection, cdnPool.ProxyServer != null ? cdnPool.ProxyServer : "no proxy");
                         written = await cdnPool.CDNClient.DownloadDepotChunkAsync(
