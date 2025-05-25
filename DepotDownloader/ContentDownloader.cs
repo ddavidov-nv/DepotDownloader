@@ -67,7 +67,7 @@ namespace DepotDownloader
                 else
                 {
                     Directory.CreateDirectory(Config.InstallDirectory);
-                    installDir = Config.SeparateDepots ? Path.Combine(Config.InstallDirectory, depotId.ToString()) : Config.InstallDirectory;
+                    installDir = Config.DepotLayout ? Path.Combine(Config.InstallDirectory, depotId.ToString()) : Config.InstallDirectory;
                     Directory.CreateDirectory(installDir);
                     Directory.CreateDirectory(Path.Combine(installDir, CONFIG_DIR));
                     Directory.CreateDirectory(Path.Combine(installDir, STAGING_DIR));
@@ -650,53 +650,77 @@ namespace DepotDownloader
             public ulong depotBytesCompressed;
             public ulong depotBytesUncompressed;
         }
-
-        private class DownloadMonitor(GlobalDownloadCounter globalDownloadCounter)
+		
+		#### docuement the class (Cursor is great for that)
+        private sealed class DownloadMonitor : IDisposable
         {
-            readonly GlobalDownloadCounter globalDownloadCounter = globalDownloadCounter;
-            public Thread monitorThread;
-            private bool running = false;
-            private const int interval = 1000 * 60;
-            private ulong lastDownloadSize = 0;
-            readonly AutoResetEvent threadWait = new(false);
+            private readonly GlobalDownloadCounter globalDownloadCounter;
+            private readonly int reportIntervalMs;
+            private Thread monitorThread;
+            private volatile bool running = false;
+            private long lastDownloadSize = 0;
+            private readonly AutoResetEvent threadWait = new(false);
+            private readonly object lockObject = new();
+
+            public DownloadMonitor(
+                GlobalDownloadCounter globalDownloadCounter,
+                int reportIntervalMs = 60000)
+            {
+                this.globalDownloadCounter = globalDownloadCounter;
+                this.reportIntervalMs = reportIntervalMs;
+            }
+
             public void Start()
             {
+                if (monitorThread != null)
+                    return;
+
                 running = true;
                 monitorThread = new Thread(ReportAlive);
                 monitorThread.Start();
             }
-            ~DownloadMonitor()
-            {
-                Stop();
-            }
+
             public void Stop()
             {
-                Console.WriteLine("stopping download monitor ..");
-                if (running)
-                {
-                    running = false;
-                    threadWait.Set();
-                    monitorThread.Join();
-                    Console.WriteLine("download monitor was stopped");
-                }
-                else
-                {
-                    Console.WriteLine("download monitor is not running !");
-                }
+                if (!running)
+                    return;
+
+                running = false;
+                threadWait.Set();
+                monitorThread?.Join();
+                monitorThread = null;
             }
+
             private void ReportAlive()
             {
-                while (running)
+                try
                 {
-                    var totalDownloadedBytes = globalDownloadCounter.totalBytesUncompressed;
-                    if (totalDownloadedBytes > lastDownloadSize)
+                    while (running)
                     {
-                        lastDownloadSize = totalDownloadedBytes;
-                        Console.WriteLine("Downloaded : {0}", Util.FormatFileSize((long)lastDownloadSize));
-                    }
-                    threadWait.WaitOne(interval);
-                }
+                        ulong currentDownloadedBytes;
+                        lock (lockObject)
+                        {
+                            currentDownloadedBytes = globalDownloadCounter.totalBytesUncompressed;
+                        }
 
+                        if (currentDownloadedBytes > (ulong)Interlocked.Read(ref lastDownloadSize))
+                        {
+                            Interlocked.Exchange(ref lastDownloadSize, (long)currentDownloadedBytes);
+                            Console.WriteLine("Downloaded : {0}", Util.FormatSize((long)currentDownloadedBytes));
+                        }
+                        threadWait.WaitOne(reportIntervalMs);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error in download monitor: {ex.Message}");
+                }
+            }
+
+            public void Dispose()
+            {
+                Stop();
+                threadWait.Dispose();
             }
         }
         private static async Task DownloadSteam3Async(List<DepotDownloadInfo> depots)
@@ -732,9 +756,7 @@ namespace DepotDownloader
                     cts.Token.ThrowIfCancellationRequested();
                 }
 
-                // If we're about to write all the files to the same directory, we will need to first de-duplicate any files by path
-                // This is in last-depot-wins order, from Steam or the list of depots supplied by the user
-                if (!Config.SeparateDepots)
+                if (!Config.DepotLayout)
                 {
 
                     if (!string.IsNullOrWhiteSpace(Config.InstallDirectory) && depotsToDownload.Count > 0)
@@ -760,11 +782,11 @@ namespace DepotDownloader
                 Ansi.Progress(Ansi.ProgressState.Hidden);
 
                 Console.WriteLine("Total downloaded: {0} bytes ({1} bytes uncompressed) from {2} depots",
-                    downloadCounter.totalBytesCompressed, downloadCounter.totalBytesUncompressed, depots.Count);
+                    Util.FormatSize((long)downloadCounter.totalBytesCompressed), Util.FormatSize((long)downloadCounter.totalBytesUncompressed), depots.Count);
             }
             catch (IOException ex)
             {
-                Console.WriteLine("Failed to download steam v3 app: {0}", ex.Message);
+                Console.WriteLine("Failed to download steam app: {0}", ex.Message);
             }
             finally
             {
@@ -1036,7 +1058,7 @@ namespace DepotDownloader
             DepotConfigStore.Instance.InstalledManifestIDs[depot.DepotId] = depot.ManifestId;
             DepotConfigStore.Save();
 
-            Console.WriteLine("Depot {0} - Downloaded {1} bytes ({2} bytes uncompressed)", depot.DepotId, depotCounter.depotBytesCompressed, depotCounter.depotBytesUncompressed);
+            Console.WriteLine("Depot {0} - Downloaded {1} bytes ({2} bytes uncompressed)", depot.DepotId, Util.FormatSize((long)depotCounter.depotBytesCompressed), Util.FormatSize((long)depotCounter.depotBytesUncompressed));
         }
 
         private static void DownloadSteam3AsyncDepotFile(
@@ -1069,8 +1091,9 @@ namespace DepotDownloader
 
             List<DepotManifest.ChunkData> neededChunks;
 
-            if (Config.RedownloadOutdatedFiles && File.Exists(fileFinalPath))
+            if (Config.LeverageBandwidth && File.Exists(fileFinalPath))
             {
+				### Add documentation here - why do we do that? what are the conditions to do that?
                 if ((oldManifestFile == null) || (!oldManifestFile.FileHash.SequenceEqual(file.FileHash)))
                 {
                     File.Delete(fileFinalPath);

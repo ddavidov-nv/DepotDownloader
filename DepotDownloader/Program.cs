@@ -19,7 +19,6 @@ namespace DepotDownloader
     {
         static async Task<int> Main(string[] args)
         {
-            //args = ["-app","3483400", "-username", "*****", "-max-downloads", "128", "-dir", "C:\\GameBuilds\\test12\\depots", "-depot", "3483400", "-manifest", "154438109621168119", "-redownload-outdated-files", "-password", "***", "-remember-password", "-separate-depots"];
             if (args.Length == 0)
             {
                 PrintVersion();
@@ -131,8 +130,9 @@ namespace DepotDownloader
             }
 
             ContentDownloader.Config.InstallDirectory = GetParameter<string>(args, "-dir");
-            ContentDownloader.Config.SeparateDepots = HasParameter(args, "-separate-depots");
-            ContentDownloader.Config.RedownloadOutdatedFiles = HasParameter(args, "-redownload-outdated-files");
+            ContentDownloader.Config.DepotLayout = HasParameter(args, "-depot-layout");
+
+            ContentDownloader.Config.LeverageBandwidth = HasParameter(args, "-leverage-bandwidth");
 
             ContentDownloader.Config.VerifyAll = HasParameter(args, "-verify-all") || HasParameter(args, "-verify_all") || HasParameter(args, "-validate");
             ContentDownloader.Config.MaxServers = GetParameter(args, "-max-servers", 20);
@@ -460,7 +460,7 @@ namespace DepotDownloader
             Console.WriteLine();
             Console.WriteLine("  -dir <installdir>        - the directory in which to place downloaded files.");
             Console.WriteLine("  -filelist <file.txt>     - a list of files to download (from the manifest). Prefix file path with 'regex:' if you want to match with regex.");
-            Console.WriteLine("  -validate                - Include checksum verification of files already downloaded");
+            Console.WriteLine("  -validate                - include checksum verification of files already downloaded");
             Console.WriteLine();
             Console.WriteLine("  -manifest-only           - downloads a human readable manifest for any depots that would be downloaded.");
             Console.WriteLine("  -cellid <#>              - the overridden CellID of the content server to download from.");

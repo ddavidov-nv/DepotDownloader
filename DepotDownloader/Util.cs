@@ -17,8 +17,7 @@ namespace DepotDownloader
     {
         public static async Task ExecuteWithRetry(Func<Task> operation, int maxRetries = 3, int initialDelay = 1000)
         {
-            var retryCount = 0;
-            while (true)
+            for (var retryCount = 0; retryCount <= maxRetries; retryCount++)
             {
                 try
                 {
@@ -27,22 +26,24 @@ namespace DepotDownloader
                 }
                 catch (Exception ex) when (retryCount < maxRetries)
                 {
-                    retryCount++;
-                    var delay = initialDelay * (int)Math.Pow(2, retryCount - 1);
-                    Console.WriteLine($"Error: Attempt {retryCount} failed: {ex.Message}. Retrying in {delay}ms.");
+                    var delay = initialDelay * (1 << retryCount); // Use bit shifting for more efficient power of 2
+                    Console.WriteLine($"Error: Attempt {retryCount + 1} of {maxRetries} failed: {ex.Message}");
+                    Console.WriteLine($"Retrying in {delay}ms...");
                     await Task.Delay(delay);
                 }
             }
+            throw new Exception($"Operation failed after {maxRetries} retries"); // Throw if all retries exhausted
         }
 
-        public static string FormatFileSize(long bytes)
+        public static string FormatSize(long bytes)
         {
             string[] suffixes = { "B", "KB", "MB", "GB", "TB", "PB", "EB" };
             var counter = 0;
             var number = (decimal)bytes;
-            while (Math.Round(number / 1024) >= 1)
+            const int kilo = 1024;
+            while (Math.Round(number / kilo) >= 1)
             {
-                number /= 1024;
+                number /= kilo;
                 counter++;
             }
             return string.Format("{0:n1} {1}", number, suffixes[counter]);
