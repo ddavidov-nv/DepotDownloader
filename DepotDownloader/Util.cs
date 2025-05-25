@@ -111,6 +111,7 @@ namespace DepotDownloader
 
             return password.ToString();
         }
+
         // Validate a file against Steam3 Chunk data
         public static List<DepotManifest.ChunkData> ValidateSteam3FileChecksums(FileStream fs, DepotManifest.ChunkData[] chunkdata)
         {
@@ -143,6 +144,7 @@ namespace DepotDownloader
 
             return BitConverter.GetBytes(a | (b << 16));
         }
+
         public static byte[] FileSHAHash(string filename)
         {
             using (var fs = File.Open(filename, FileMode.Open))
@@ -236,6 +238,7 @@ namespace DepotDownloader
                 return false; // Return false if an error occurs
             }
         }
+
         public static byte[] DecodeHexString(string hex)
         {
             if (hex == null)
