@@ -532,8 +532,8 @@ namespace DepotDownloader
             Console.WriteLine("  -loginid <#>             - a unique 32-bit integer Steam LogonID in decimal, required if running multiple instances of DepotDownloader concurrently.");
             Console.WriteLine("  -use-lancache            - forces downloads over the local network via a Lancache instance.");
             Console.WriteLine();
-            Console.WriteLine("  -depot-layout            - download depots in a layout that is more suitable for game development.");
-            Console.WriteLine("  -leverage-bandwidth      - leverage bandwidth by re-downloading files that have changed.");
+            Console.WriteLine("  -depot-layout            - store each depot's files in separate folder named by depot ID.This can be useful for game development.");
+            Console.WriteLine("  -leverage-bandwidth      - prefer network bandwidth over CPU usage by re-downloading changed files instead of patching them");
             Console.WriteLine();
             Console.WriteLine("  -debug                   - enable verbose debug logging.");
             Console.WriteLine("  -V or --version          - print version and runtime.");

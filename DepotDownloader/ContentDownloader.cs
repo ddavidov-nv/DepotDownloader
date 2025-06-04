@@ -435,6 +435,7 @@ namespace DepotDownloader
                 {
                     var contentName = GetAppName(appId);
                     Console.WriteLine(string.Format("Error: App {0} ({1}) is not available from this account.", appId, contentName));
+                    // Skip this app and continue processing other apps in the list since we don't have access to download it
                     return;
                 }
             }
@@ -654,6 +655,9 @@ namespace DepotDownloader
             public ulong depotBytesUncompressed;
         }
 
+        /// <summary>
+        /// Monitors and reports download progress at regular intervals
+        /// </summary>
         private sealed class DownloadMonitor : IDisposable
         {
             private readonly GlobalDownloadCounter globalDownloadCounter;
@@ -1095,7 +1099,9 @@ namespace DepotDownloader
             }
 
             List<DepotManifest.ChunkData> neededChunks;
-
+            // Check if existing file needs updating when leveraging bandwidth 
+            // If outdated , delete to re-download            
+            // Staging and updating blocks can be slower than fresh download on fast connections
             if (Config.LeverageBandwidth && File.Exists(fileFinalPath))
             {
                 if ((oldManifestFile == null) || (!oldManifestFile.FileHash.SequenceEqual(file.FileHash)))
