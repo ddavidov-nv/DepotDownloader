@@ -1,5 +1,0 @@
-binaries/** filter=lfs diff=lfs merge=lfs -text
-*.cs text eol=lf
-*.csproj text eol=lf
-*.config eol=lf
-*.json eol=lf
