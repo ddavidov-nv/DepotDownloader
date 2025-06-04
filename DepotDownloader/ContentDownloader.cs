@@ -601,7 +601,8 @@ namespace DepotDownloader
                 Console.WriteLine("Error: Unable to create install directories!");
                 return null;
             }
-            // For depots that are proxied through depotfromapp, we still need to resolve the proxy app id
+
+            // For depots that are proxied through depotfromapp, we still need to resolve the proxy app id, unless the app is freetodownload
             var containingAppId = appId;
             var proxyAppId = GetSteam3DepotProxyAppId(depotId, appId);
             if (proxyAppId != INVALID_APP_ID)
@@ -737,6 +738,9 @@ namespace DepotDownloader
 
             var cts = new CancellationTokenSource();
 
+            await cdnPool.UpdateServerList();
+
+            var cts = new CancellationTokenSource();
             var downloadCounter = new GlobalDownloadCounter();
             var downloadMonitor = new DownloadMonitor(downloadCounter);
             var depotsToDownload = new List<DepotFilesData>(depots.Count);
